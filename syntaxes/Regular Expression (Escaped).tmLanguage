@@ -209,7 +209,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?:[._]|[a-zA-Z0-9])+</string>
+            <string>(?:[._']|[a-zA-Z0-9]+)</string>
             <key>name</key>
             <string>string.set.element.escapedregexp</string>
           </dict>
