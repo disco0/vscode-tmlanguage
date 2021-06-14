@@ -1,0 +1,375 @@
+# @TODO: Add meta regions for (fn ...) declarations, with docstring `string.quoted.docstring.fennel`
+#        scope.
+# @TODO: Add scopes for macro environment constructs, e.g. auto gensym notation (`variable#`)
+# @TODO: Add support for {{variables}} in build step
+#        - See TypeScript grammar build.ts for implementation:
+#           <https://github.com/microsoft/TypeScript-TmLanguage/blob/master/build/build.ts>
+# @TODO: Decide on best variable definition lookahead assertion while matching builtin/keyword-like
+#        functions—defining functions with keyword like prefixes should not match halfway through
+#        the symbol, atm the function declaration ident highlighting is broken for e.g.:
+#        |---|-error-
+#        printf
+#        ||-error-
+#        λλ
+#        |-error-
+#        λ-like
+# @TODO: Properly implement parsing of fn/macro/λ/binding-adjacent structures to properly scope
+#        parameters, symbol identifiers in declarations, etc. Did this in sublime-syntax, just
+#        reimplement here 4head
+
+name: Fennel
+scopeName: source.fennel
+
+variables:
+  identNaive: '[a-zA-Z_][\w-]*'
+  identPostfix: '[?!]'
+  identPostfixOptional: '{{identPostfix}}?'
+
+  # From fennel grammar on Sublime Text Package Control
+
+  lua_coroutine: 'coroutine\.(close|create|isyieldable|resume|running|status|wrap|yield)'
+  lua_debug:     'debug\.(debug|gethook|getinfo|getlocal|getmetatable|getregistry|getupvalue|getuservalue|setcstacklimit|sethook|setlocal|setmetatable|setupvalue|setuservalue|traceback|upvalueid|upvaluejoin)'
+  lua_io:        'io\.(close|flush|input|lines|open|output|popen|read|stderr|stdin|stdout|tmpfile|type|write)'
+  lua_math:      'math\.(abs|acos|asin|atan|atan2|ceil|cos|cosh|deg|exp|floor|fmod|frexp|huge|ldexp|log|maxinteger|max|mininteger|min|modf|pi|pow|rad|randomseed|random|sin|sinh|sqrt|tan|tanh|tointeger|type|ult)'
+  lua_os:        'os\.(clock|date|difftime|execute|exit|getenv|remove|rename|setlocale|time|tmpname)'
+  lua_package:   'package\.(config|cpath|loaded|loadlib|path|preload|searchers|searchpath)'
+  lua_string:    'string\.(byte|char|dump|find|format|gmatch|gsub|len|lower|match|packsize|pack|rep|reverse|sub|unpack|upper)'
+  lua_table:     'table\.(concat|insert|move|pack|remove|sort|unpack)'
+  lua_utf8:      'utf8\.(charpattern|char|codepoint|codes|len|offset)'
+
+  lua_variables: '_G|_VERSION|{{lua_coroutine}}|coroutine|{{lua_debug}}|debug|{{lua_io}}|io|{{lua_math}}|math|{{lua_os}}|os|{{lua_package}}|package|{{lua_string}}|string|{{lua_table}}|table|{{lua_utf8}}|utf8'
+  lua_functions: 'assert|collectgarbage|dofile|error|getmetatable|ipairs|loadfile|load|next|pairs|pcall|print|rawequal|rawget|rawlen|rawset|require|select|setmetatable|tonumber|tostring|type|warn|xpcall|{{lua_coroutine}}|{{lua_debug}}|{{lua_io}}|{{lua_math}}|{{lua_os}}|{{lua_package}}|{{lua_string}}|{{lua_table}}|{{lua_utf8}}'
+
+  # -------------------------------------------------
+
+  lua_constants: 'true|false|nil'
+  lua_keywords:  'and|if|not|or|while|do|for'
+  lua_operators: '\+|\-|\%|\*|\/\/|\/|\^|\.\.|\>|\<|\>=|\<=|=|\.|\:|\.\.\.'
+
+  # Based on fennel/src/fennel/utils.fnl:286:20
+  lua_ident_base: '[[:alpha:]_\w_]+'
+  # Non-special variable identifier (in lua)
+  # @TODO Is there a more efficient way to do this? Mostly as an excercise—I'm guessing the
+  #       resonable way to do this naturally would be to place the generic identifier capture after
+  #       the core/global variable identifier matches)
+  lua_ident: '{{lua_ident_base}}'
+
+  # -------------------------------------------------
+
+  # fennel_threading_macros: (?:->|-\?>>|-\?>|-\>\>)(?=[{{non_symbol_chars}}])
+  fennel_threading_macros: (?:-[?]?[>]{1,2})(?=[{{non_symbol_chars}}])
+  fennel_operators:        'not='
+  fennel_keywords:         'band|bnot|bor|bxor|doc|dotimes|doto|each|eval-compiler|global|hashfn|import-macros|include|length|lshift|macro|macrodebug|macros|match|partial|pick-args|pick-values|println|rshift|set|tset|unpack|values|var|when|with-open'
+
+  # -------------------------------------------------
+
+  non_symbol_chars:       '\s,;\(\)\[\]\{\}\"`~@\^\\'
+
+  non_symbol_start_chars: '{{non_symbol_chars}}\d#'':'
+  non_number_chars:       '{{non_symbol_chars}}#'''
+  non_char_chars:         '{{non_symbol_chars}}#'''
+  atom:                   '[^{{non_symbol_chars}}]+'
+  symbol:                 (?:/|[^{{non_symbol_start_chars}}][^{{non_symbol_chars}}]*)
+  # Slightly too permissive
+  # @TODO Would this better be labeled string literal?
+  keyword:                (:):?[^:{{non_symbol_chars}}][^{{non_symbol_chars}}]*
+  constant:               (?:{{lua_constants}})(?=[{{non_symbol_chars}}])
+  lua_support:            (?:{{lua_operators}}|{{lua_keywords}}|{{lua_functions}})(?=[{{non_symbol_chars}}])
+  fennel_support:         (?:{{fennel_operators}}|{{fennel_keywords}})(?=[{{non_symbol_chars}}])
+  evil_octal:             '[-+]?0\d+N?(?=[{{non_symbol_chars}}])'
+  sign:                   '[-+]?'
+  exponent:               (?:[eE]{{sign}}\d+)
+  dec_integer:            ({{sign}})\d+(N?)(?=[{{non_number_chars}}])
+  hex_integer:            ({{sign}})(0[Xx])\h+(N?)(?=[{{non_number_chars}}])
+  other_integer:          ({{sign}})((?:[2-9]|[1-9]\d+)[Rr])[0-9A-Za-z]+(?=[{{non_number_chars}}])
+  rational:               ({{sign}})\d+(/)\d+(?=[{{non_number_chars}}])
+  float:                  ({{sign}})\d+(?:(?:(\.)\d+{{exponent}}?|{{exponent}})(M)?|(M))(?=[{{non_number_chars}}])
+
+patterns:
+  - include: '#expression'
+
+repository:
+  expression:
+    patterns:
+      - include: '#hash-func'
+      - include: '#quoted-sexp'
+      - include: '#sexp'
+      - include: '#comment'
+      - include: '#keywords'
+      - include: '#constants'
+      # - include: '#sexp-or-quoted-sexp'
+      - include: '#table'
+      - include: '#vector'
+      - include: '#special'
+      - include: '#lua'
+      - include: '#strings'
+      - include: '#methods'
+      - include: '#symbols'
+
+  constants:
+    patterns:
+      - match: '\bnil(?=[ \{\(\[\)\]\}])' # lookahead-assert-any
+        name: constant.language.nil.fennel
+      - match: '\b(false|true)(?=[ \{\(\[\)\]\}])' # lookahead-assert-any
+        name: constant.language.boolean.fennel
+      - match: '([-]?\d+\.\d+([eE][+-]?\d+)?)(?=[ \{\(\[\)\]\}])' # lookahead-assert-any
+        name: constant.numeric.double.fennel
+      - match: '([-]?\d+)(?=[ \{\(\[\)\]\}])' # lookahead-assert-any
+        name: constant.numeric.integer.fennel
+      - name: constant.other.fennel
+        # match: ':[^\s\n\(\[\{\)\]\}:#.,]+'
+        match: '[:][a-zA-Z_-]+[a-zA-Z\d_-]*(?:[-][a-zA-Z\d_]+)*'
+
+  comment:
+    patterns:
+      - name: comment.line.semicolon.fennel
+        begin: '[;]'
+        end: $
+
+  quoted-term:
+    patterns:
+      # Simple: ,term
+      - match: '(,)(?=[^\s\n\(\{\[]+)'
+        captures:
+          '1':
+            - name: constant.language.fennel
+      # Expression: ,(<expr>)
+      - begin: '(,)(?=\()'
+        patterns:
+          - include: '#sexp'
+
+  hash-func:
+    patterns:
+      - match: '(#)([$]\d?)'
+        name:  meta.expression.macro.hashfn.fennel
+        captures:
+          '1': { name: constant.language.function.hashfn.fennel }
+          '2': { name: variable.language.macro.hashfn.fennel }
+
+      # @TODO: Hash arguments can also be used as parts of multisyms. For instance, `#$.foo` is a
+      #        function which will return the value of the “foo” key in its first argument.
+      - match: '(#)([a-zA-Z_][\w]*(?:-[a-zA-Z_][\w]*)*)'
+        name:  meta.expression.macro.hashfn.fennel
+        captures:
+          '1': { name: support.function.hashfn.fennel }
+          # TODO use :literal scpoe
+          '2': { name: variable.language.macro.hashfn.fennel }
+
+      - name:  meta.expression.macro.hashfn.fennel
+        begin: '(#)(\()'
+        end:   \)
+        beginCaptures:
+          # '0':
+          #   name: keyword.special.macro.hashfn.begin.fennel
+          '1':
+            name: support.function.macro.hashfn.fennel
+          '2':
+            name: punctuation.paren.open.fennel
+        endCaptures:
+          '0':
+            name: punctuation.paren.close.fennel
+          # '0':
+          #   name: punctuation.paren.close.fennel
+        patterns:
+          - match: '[\$][0-9]'
+            name:  variable.language.macro.hashfn.fennel
+
+          - include: '#expression'
+
+  quoted-sexp:
+    name:  meta.expression.quoted.fennel
+    begin: (`)(\()
+    end:   \)
+    beginCaptures:
+      '1':
+        name: constant.language.quoted.fennel
+      '2':
+        name: punctuation.paren.open.fennel
+    endCaptures:
+      '0':
+        name: punctuation.paren.close.fennel
+    comment: '@TODO: Add quoted expression body for ,*'
+    patterns:
+      - include: '#expression'
+
+  sexp:
+    name: sexp.fennel
+    begin: \(
+    end:   \)
+    beginCaptures:
+      '0':
+        name: punctuation.paren.open.fennel
+    endCaptures:
+      '0':
+        name: punctuation.paren.close.fennel
+    patterns:
+      - include: '#expression'
+
+  # sexp-or-quoted-sexp:
+  #   patterns:
+  #     - include: '#quoted-sexp'
+  #     - include: '#sexp'
+
+  table:
+    name:  meta.table.fennel
+    begin: '\{'
+    end:   '\}'
+    beginCaptures:
+      '0':
+        name: punctuation.table.bracket.open.fennel
+    endCaptures:
+      '0':
+        name: punctuation.table.bracket.close.fennel
+    patterns:
+      - include: '#expression'
+
+  vector:
+    name: meta.vector.fennel
+    begin: '\['
+    end:   '\]'
+    beginCaptures:
+      '0':
+        name: punctuation.vector.bracket.open.fennel
+    endCaptures:
+      '0':
+        name: punctuation.vector.bracket.close.fennel
+    patterns:
+      - include: '#expression'
+
+  special:
+    patterns:
+      - name:  keyword.operator.boolean.fennel
+        match: '\b(?:and|or|not)(?=[ \(\[\{])'
+      - name:  keyword.operator.arithmetic.fennel
+        match: '(?:[+]|[-]|[*]|[/]{1,2}|[%]|[\^])(?=[ \(\[\{])'
+      - name:  keyword.operator.comparison.fennel
+        match: '(?:[>]|[<]|[>][=]|[<][=]|[=]|not[=])(?=[ \(\[\{])'
+      - name:  keyword.operator.bitwise.fennel
+        match: '\b(?:[rl]shift|band|bor|bxor|bnot)'
+      - name:  keyword.operator.accessor.fennel
+        match: '(?:(?<=\([ ]*)[\#]|length)(?=[ \{\(\[])'
+      - name:  keyword.special.fennel
+        match: '(?:[-]\>(?:\>)?)(?=[ \{\(\[])' # lookahead-assert
+      - name:  keyword.special.fennel
+        match: '(?:[-]\?\>(?:\>)?)(?=[ \{\(\[])' # lookahead-assert
+      # - name: keyword.special.fennel
+      #   match: '(?:\#|\%|\+|\*|[\?][\.]|[\.]{1,2}|[\/]{1,2}|[:]|[<][=]?|[=]|[>][=]?|[\^])(?=[ \{\(\[])' # lookahead-assert
+      # - name: keyword.special.fennel
+      #   match: '-(?![ \(\[\{)])'
+      # - name: keyword.special.fennel
+      #   match: '(?:not=)(?=[ \{\(\[])' # lookahead-assert
+      - name: keyword.special.fennel
+        match: '(set-forcibly!)(?=[ \{\(\[])' # lookahead-assert
+      - name: keyword.special.fennel
+        match: >-
+          \b(?:and|band|bnot|bor|bxor|collect|comment|do|doc|doto|each|eval-compiler|for|global|hashfn|icollect|if|import-macros|include|lambda|length|let|local|lshift|lua|macro|macrodebug|macros|match(?:-[a-zA-Z]+\w*)*|not=?|or|partial|pick-args|pick-values|quote|require-macros|rshift|set|tset|values|var|when|while|with-open)(?=[ \{\(\[])
+      - name: keyword.control.fennel
+        match: '\b(?:fn)(?=[ \{\(\[])' # lookahead-assert
+      - name: keyword.special.fennel
+        match: '(?:~=)(?=[ \{\(\[])' # lookahead-assert
+      - name: keyword.special.fennel
+        match: '(?:λ)(?=[ \{\(\[])' # lookahead-assert
+      # Catch all for pseudo keyword like function symbols
+      - name: keyword.special.other.fennel
+        match: '(?:(?<=[\(][\s]*)(?:(?:fn|λ)[^\s\n\(\[\{\)\]\}:#\.,]+|[λ~=*/\\\$][λ~=*/\\\-\$]*))'
+  lua:
+    patterns:
+      - name: support.function.fennel
+        match: |-
+          (?x)
+            \b(
+              assert
+              | collectgarbage
+              | dofile
+              | error
+              | [gs]etmetatable
+              | load(?:file)?
+              | next
+              | [i]?pairs
+              | [x]?pcall
+              | print
+              | raw(?:equal|[gs]et|len)
+              | require
+              | select
+              | to(?:number|string)
+              | type
+            )
+            (?! [\-\w] )
+      - name: support.function.library.fennel
+        match: |-
+          (?x)
+            \b(
+              coroutine(?:\.(?:create|isyieldable|resume|running|status|wrap|yield)|(?![\w\.]))
+              | debug(?:\.(?:debug|gethook|getinfo|getlocal|getmetatable|getregistry|getupvalue|getuservalue|sethook|setlocal|setmetatable|setupvalue|setuservalue|traceback|upvalueid|upvaluejoin)|(?![\w\.]))
+              | io(?:\.(?:close|flush|input|lines|open|output|popen|read|stderr|stdin|stdout|tmpfile|type|write)|(?![\w\.]))
+              | math(?:\.(?:abs|acos|asin|atan|ceil|cos|deg|exp|floor|fmod|huge|log|max|maxinteger|min|mininteger|modf|pi|rad|random|randomseed|sin|sqrt|tan|tointeger|type|ult)|(?![\w\.]))
+              | os(?:\.(?:clock|date|difftime|execute|exit|getenv|remove|rename|setlocale|time|tmpname)|(?![\w\.]))
+              | package(?:\.(?:config|cpath|loaded|loadlib|path|preload|searchers|searchpath)|(?![\w\.]))
+              | string(?:\.(?:byte|char|dump|find|format|gmatch|gsub|len|lower|match|pack|packsize|rep|reverse|sub|unpack|upper)|(?![\w\.]))
+              | table(?:\.(?:concat|insert|move|pack|remove|sort|unpack)|(?![\w\.]))
+              | utf8(?:\.(?:char|charpattern|codepoint|codes|len|offset)|(?![\w\.]))
+            )
+            (?= [^\w\.] )
+      - match: '\b(_(?:VERSION|ENV|G))(?=[^#\-])'
+        name: constant.language.fennel
+
+  string-dquote:
+    name: string.quoted.double.fennel
+    begin: '(["])'
+    beginCaptures:
+      '0':
+        name: punctuation.definition.string.begin.fennel
+    end:   (?:\1)
+    endCaptures:
+      '0':
+        name: punctuation.definition.string.end.fennel
+    patterns:
+      - name: constant.character.escape.fennel
+        match: \\.
+
+  string-doc:
+    name: string.docstring.fennel
+    contentName: meta.block.documentation.fennel
+    begin: '([\"]{3})'
+    beginCaptures:
+      '1':
+        name: punctuation.definition.string.docstring.begin.fennel
+    end:   '([\"]{3})'
+    endCaptures:
+      '1':
+        name: punctuation.definition.string.docstring.end.fennel
+
+  strings:
+    patterns:
+      - include: '#string-doc'
+      - include: '#string-dquote'
+
+  # @TODO Properly scope :string style literals if below solitary keyword pattern isn't for them,
+  #       add a separate pattern/repo for them with aforementioned relevant scope
+  keywords:
+    patterns:
+      - name: variable.language.vararg.fennel
+        match: '(?<!\.)[\.]{3}(?!\.)'
+      - name: constant.other.fennel
+        # match: ':[^\s\n\(\[\{\)\]\}:#.,]+'
+        match: '[:][a-zA-Z_-]+[a-zA-Z\d_]*(?:[-][a-zA-Z\d_]+)*'
+
+  methods:
+    patterns:
+      - name: entity.name.function.method.fennel
+        match: '\w+[:][^\s\n\(\[\{\)\]\}:#.,]+{{identPostfixOptional}}?'
+
+  symbols:
+    patterns:
+      # Catch all for pseudo keyword like function symbols (jank)
+      - name: keyword.special.other.fennel
+        match: '(?:(?:fn|λ|macro(?:s|debug)|[a-z]*print[a-z])[^\s\n\(\[\{\)\]\}:#\.\-,]+|[λ+~=*/\\\$][λ~+=*/\\\-\$]*)'
+      - name: entity.name.function.symbol.fennel
+        match: '(?:(?:list|(?:gen)?sym)[?]?|\w+(?:[.-]\w+)+[?!]?)(?=\b|$|[ ])'
+        # match: \w+
+      - name: variable.other.macro.generated.fennel
+        match: '[^\s\n\(\)\[\]\{\}:#,]+[#]'
+      - name: variable.other.optional.fennel
+        match: '[?]{{identNaive}}'
+      - name: variable.other.fennel
+        match: '[^\s\n\(\)\[\]\{\}:#,\.][^\s\n\(\)\[\]\{\}:#,]*'

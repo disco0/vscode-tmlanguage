@@ -26,6 +26,10 @@
 		</dict>
 		<dict>
 			<key>include</key>
+			<string>#variable_expansion</string>
+		</dict>
+		<dict>
+			<key>include</key>
 			<string>#character_class</string>
 		</dict>
 		<dict>
@@ -152,6 +156,31 @@
 	</array>
 	<key>repository</key>
 	<dict>
+		<key>variable_expansion</key>
+		<dict>
+			<key>match</key>
+			<string>(?&lt;!(?:[\\]{2})*[\\])([{]{2})([a-zA-Z_][a-zA-Z_\d]*)([}]{2})</string>
+			<key>name</key>
+			<string>meta.variable.regexp</string>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>punctuation.definition.variable.begin.regexp</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>variable.other.regexp</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>punctuation.definition.variable.end.regexp</string>
+				</dict>
+			</dict>
+		</dict>
 		<key>character_class</key>
 		<dict>
 			<key>match</key>
@@ -214,6 +243,10 @@
 			<string>string.regexp.set</string>
 			<key>patterns</key>
 			<array>
+        <dict>
+          <key>include</key>
+          <string>#variable_expansion</string>
+        </dict>
 				<dict>
 					<key>match</key>
 					<string>\[:\^?(?&gt;alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit|word):\]</string>

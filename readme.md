@@ -1,30 +1,15 @@
-# TextMate/Sublime Language Definition for VSCode
+# TextMate Syntax Definitions for Visual Studio Code
 
-This package provides syntax highlighting for the SublimeText JSON/YAML tmlanguage files in VsCode. The syntax highlighting uses 
-tmLanguage files sourced from https://github.com/SublimeText/PackageDev. Coffee script language information is sourced from https://github.com/aponxi/sublime-better-coffeescript/blob/master/CoffeeScript.tmLanguage
+This package provides syntax highlighting for the SublimeText JSON/YAML tmlanguage files in Visual Studio Code with additional highlighting for variable defintions in YAML. Forked from [Togusa90.tmlanguage](https://github.com/Togusa09/vscode-tmlanguage), based on grammars from Sublime Text's [PackageDev](https://github.com/SublimeText/PackageDev) package.
 
-This package can now convert between JSON/YAML and standard PLIST tmLanguage files.
- 
-The functionality in this extension is inspired by SublimeText PackageDev, and the lack functionality around tmLanguage files, even though
-it's a recommended format for VSCODE syntax highlighting.
+## Differences from <code>[Togusa90.tmlanguage](https://github.com/Togusa09/vscode-tmlanguage)</code>
 
-## Currently Included
+This fork provides improved language and grammar configurations for tmLanguage files only. The original conversion commands and JSON tmLanguage completion/diagnostics have issues—the later even causing issues with regular JSON files—and need to be fixed before returning. At the moment this fork is focused on fixing/improving grammars, but providing diagnostics for YAML/JSON-tmLanuage is something I'd like to do in the future.
 
-### Syntax Highlighting and Snippets for JSON-tmLanguage files
-![JSON-tmLanguage](/images/json_sample.png)
+Very much WIP, however even just removing the programmatic features will probably improve your experience (especially if you're reading the DevTools console). Some improvements have been made to fix escaped regexes inside JSON values, but its still not perfect.
 
-### Syntax Highlighting and Snippets for YAML-tmLanguage files
-![YAML-tmLanguage](/images/yaml_sample.png)
+## Syntax Highlighting Screenshots
 
-### Conversion between tmLanguage file variants
-![Available Commands](/images/commands_sample.png)
+`variables` defintion block highlighting in YAML-tmLanguage files:
 
-Included commands are:
-- Convert to JSON-tmLanguage file - Converts to JSON from YAML/PLIST
-- Convert to tmLanguage file - Converts to PLIST from YAML/JSON
-- Convert to YAML-tmLanguage file - Converts to YAML from JSON/PLIST
-
-# Settings
-tmLanguage.replaceExistingFile - Whether the conversion replaces the existing file or creates a new one. Defaults to true
-
-Please raise any issues with this extension through [GitHub](https://github.com/Togusa09/vscode-tmlanguage/issues)
+![YAML-tmLanguage Variables](/images/yaml-variable-definitions-00.png)

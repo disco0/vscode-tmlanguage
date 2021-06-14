@@ -8,8 +8,13 @@
 			"es6"
 		],
 		"sourceMap": true,
-        "rootDir": "."
+        "rootDir": ".",
+        "alwaysStrict": true,
+        "isolatedModules": true
 	},
+    "typeAcquisition": {
+        "enable": true
+    },
 	"exclude": [
 		"node_modules",
 		".vscode-test"

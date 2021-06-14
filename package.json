@@ -2,11 +2,11 @@
   "name": "tmlanguage",
   "displayName": "TextMate Languages",
   "description": "Syntax highlighter and snippets for JSON/YAML derivitives of TextMate language definition",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "publisher": "Togusa09",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.24.0"
+    "vscode": "^1.48.0"
   },
   "repository": {
     "type": "git",
@@ -27,8 +27,8 @@
     "YAML-tmLanguage",
     "TextMate"
   ],
-  "main": "./out/src/extension",
-  "activationEvents": [
+  "disable-main": "./out/src/extension",
+  "disable-activationEvents": [
     "onLanguage:xml",
     "onLanguage:yaml",
     "onLanguage:json",
@@ -36,7 +36,7 @@
     "onLanguage:yaml-tmlanguage",
     "onLanguage:tmlanguage"
   ],
-  "contributes": {
+  "disabled-contributes": {
     "configuration": {
       "type": "object",
       "title": "tmLanguage library configuration",
@@ -65,7 +65,9 @@
         "command": "extension.convertTo",
         "title": "Convert to... (auto)"
       }
-    ],
+    ]
+  },
+  "contributes": {
     "languages": [
       {
         "id": "json-tmlanguage",
@@ -76,7 +78,7 @@
         "extensions": [
           ".JSON-tmLanguage"
         ],
-        "configuration": "./json-tmlanguage.configuration.json"
+        "configuration": "./json-tmlanguage.language-configuration.json"
       },
       {
         "id": "yaml-tmlanguage",
@@ -85,9 +87,10 @@
           "yaml-tmlanguage"
         ],
         "extensions": [
-          ".YAML-tmLanguage"
+          ".YAML-tmLanguage",
+          ".yaml.tmlanguage"
         ],
-        "configuration": "./yaml-tmlanguage.configuration.json"
+        "configuration": "./yaml-tmlanguage.language-configuration.json"
       }
     ],
     "grammars": [
@@ -99,7 +102,7 @@
       {
         "language": "yaml-tmlanguage",
         "scopeName": "source.yaml-tmlanguage",
-        "path": "./syntaxes/yaml-tmlanguage.tmLanguage"
+        "path": "syntaxes/yaml-tmlanguage.tmLanguage.json"
       },
       {
         "scopeName": "source.escapedregexp",
@@ -128,21 +131,22 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "tsc -p ./",
-    "compile": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install"
+    "no-op": "",
+    "vscode:prepublish": "",
+    "compile": "tsc -watch -p ./"
   },
-  "dependencies": {
+  "disabled-dependencies": {
     "format-json": "^1.0.3",
     "jison": "^0.4.18",
     "plist": "^3.0.1",
     "yamljs": "^0.3.0"
   },
-  "devDependencies": {
+  "disabled-devDependencies": {
     "@types/mocha": "^5.2.1",
-    "@types/node": "^13.13.2",
-    "mocha": "^5.2.0",
-    "typescript": "^2.9.1",
-    "vscode": "^1.1.29"
+    "@types/node": "^13.13.4",
+    "@types/plist": "^3.0.2",
+    "@types/yamljs": "^0.2.31",
+    "mocha": "^7.1.2",
+    "vscode": "^1.48.0"
   }
 }

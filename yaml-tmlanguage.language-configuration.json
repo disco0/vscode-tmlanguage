@@ -1,0 +1,37 @@
+{
+  "folding": {
+    "offSide": true,
+    "markers": {
+      "start": "^([ ]*)#([rR])egion\\b",
+      "end": "^\\1#[Ee]nd\\2egion\\b"
+    }
+  },
+  "indentationRules": {
+    // Probably going to regret this
+    "increaseIndentPattern": "^(?![^\\n#]*#).*:$",
+
+  },
+  "onEnterRules": [],
+  "comments": {
+    "lineComment": "#"
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    // ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    { "open": "{", "close": "}", "notIn": [] },
+    { "open": "[", "close": "]", "notIn": [] },
+    { "open": "(", "close": ")", "notIn": ["string"] },
+    { "open": "'", "close": "'", "notIn": ["string"] },
+    { "open": "\"", "close": "\"", "notIn": ["string"] }
+  ],
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    // ["\"", "\""],
+    ["'", "'"]
+  ]
+}

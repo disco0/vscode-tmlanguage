@@ -1,6 +1,0 @@
-version: 1.0.{build}
-install:
-- npm install -g vsce
-- npm install
-build_script:
-- vsce package

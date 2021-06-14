@@ -11,15 +11,8 @@
         {
             "type": "npm",
             "script": "vscode:prepublish",
-            "problemMatcher": [
-                "$tsc-watch"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "label": "Prepublish",
-            "detail": "tsc -p ./",
+            "label": "prepublish",
+            "dependsOn": "compile:watch",
             "isBackground": false,
             "presentation": {
                 "echo":             true,
@@ -34,14 +27,14 @@
             "type": "npm",
             "script": "compile",
             "problemMatcher": [
-                "$tsc-watch"
+                "$tsc-watch",
+                "$tsc"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "label": "Compile",
-            "detail": "tsc -watch -p ./",
+            "label": "compile:watch",
             "isBackground": true,
             "presentation": {
                 "echo":             true,

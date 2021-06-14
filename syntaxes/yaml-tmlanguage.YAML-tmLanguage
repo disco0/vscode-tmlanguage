@@ -1,7 +1,9 @@
 # [PackageDev] target_format: plist, ext: tmLanguage
 ---
 name: Sublime Text Syntax Def (YAML)
-fileTypes: [YAML-tmLanguage]
+fileTypes:
+- YAML-tmLanguage
+- yaml.tmlanguage
 scopeName: source.yaml-tmlanguage
 uuid: 112dad9d-558e-4ab2-a4cc-c5f1ffa80ee6
 
@@ -20,6 +22,7 @@ patterns:
 
 ## second, match content
 # in-repo
+- include: '#variables'
 - include: '#repository'
 
 # main scope
@@ -57,14 +60,14 @@ patterns:
 
 repository:
 
-# control sequences
+  # control sequences
   comment:
     match: (?:^ *|\G *| +)((#).*\n?)
     captures:
       '1': {name: comment.line.number-sign.yaml-tmlanguage}
       '2': {name: punctuation.definition.comment.line.yaml-tmlanguage}
 
-# special keys (main scope)
+  # special keys (main scope)
   uuid:
     name: meta.uuid.yaml-tmlanguage
     match: (?:,|\{ *|^)((["']?)(uuid|bundleUUID)(\2))(:) +((["']?)(\h{8}-\h{4}-\h{4}-\h{4}-\h{12})(\7))
@@ -110,6 +113,73 @@ repository:
       '6': {name: meta.value.yaml-tmlanguage string.other.quoted-or-unquoted.yaml-tmlanguage}
       '7': {name: punctuation.definition.string.yaml-tmlanguage}
       '8': {name: punctuation.definition.string.yaml-tmlanguage}
+
+  # Adds highlighting for sublime-syntax style variables defintions
+  variables:
+      # multi-line only
+      name: meta.variables.yaml-tmlanguage
+      begin: ^(variables)(:)(?= +#| *$)
+      beginCaptures:
+        '1': {name: support.type.variables.yaml-tmlanguage}
+        '2': {name: keyword.control.definition.yaml-tmlanguage}
+      # Allow for blank likes with just wonky whitespace
+      end: ^(?![ ]{,4}$|(?:[ ]{2}){1,2}[a-zA-Z_][a-zA-Z_\d]*[:]| *#)
+      patterns:
+        - include: '#comment'
+        # multi-line (block style)
+        - name: meta.variable.block.yaml-tmlanguage
+          contentName: meta.value.yaml-tmlanguage
+          # I don't have a single fucking clue why but apparently removing
+          # the empty capturing group BREAKS the regexp
+          begin: ^( *)(?:( +)())((["']?)([a-zA-Z_][a-zA-Z_\d]*)(\3))(:)[ ]+([|>](\d*)[-+]?)(?=, |,$| +#| *$)
+          beginCaptures:
+            '4': {name: string.other.quoted-or-unquoted.yaml-tmlanguage}
+            '5': {name: punctuation.definition.string.yaml-tmlanguage}
+            '6': {name: keyword.other.variable.yaml-tmlanguage}
+            '7': {name: punctuation.definition.string.yaml-tmlanguage}
+            '8': {name: keyword.control.definition.yaml-tmlanguage}
+            '9': {name: keyword.control.block.yaml-tmlanguage}
+            '10': {name: constant.numeric.indentation-indicator.yaml-tmlanguage}
+          # must be indented by at least as much as the key line + 1 (+ 1 for the potential '-')
+          end: ^(?! *$|\1\2  )
+          patterns:
+            - include: '#comment' # for comments after the "|" or ">"
+            - include: source.oniregexp
+
+        # single-line (quoted)
+        - name: meta.variable.yaml-tmlanguage
+          contentName: meta.value.yaml-tmlanguage
+          begin: (?:, +|\{ *|^ {2,}|^ *- +)((["']?)([a-zA-Z_][a-zA-Z_\d]*)(\2))(:) +(["'])
+          beginCaptures:
+            '1': {name: string.other.quoted-or-unquoted.yaml-tmlanguage}
+            '2': {name: punctuation.definition.string.yaml-tmlanguage}
+            '3': {name: keyword.other.variable.yaml-tmlanguage}
+            '4': {name: punctuation.definition.string.yaml-tmlanguage}
+            '5': {name: keyword.control.definition.yaml-tmlanguage}
+            '6': {name: punctuation.definition.string.yaml-tmlanguage}
+          end: \6(?!\6)
+          endCaptures:
+            '0': {name: punctuation.definition.string.yaml-tmlanguage}
+          patterns:
+            # Consume double-escaped single quotes so they won't interfere with the "end" match
+            - match: "''"
+            - match: '""'
+            - include: source.oniregexp
+
+        # single-line (unquoted)
+        - name: meta.variable.yaml-tmlanguage
+          contentName: meta.value.yaml-tmlanguage
+          begin: (?:, +|\{ *|^ {2,})((["']?)([a-zA-Z_][a-zA-Z_\d]*)(\2))(:)(?:(?= +#)| +(?!["'\[{]))
+          beginCaptures:
+            '1': {name: string.other.quoted-or-unquoted.yaml-tmlanguage}
+            '2': {name: punctuation.definition.string.yaml-tmlanguage}
+            '3': {name: keyword.other.variable.yaml-tmlanguage}
+            '4': {name: punctuation.definition.string.yaml-tmlanguage}
+            '5': {name: keyword.control.definition.yaml-tmlanguage}
+          # This regexp is complex due to the many possibilities to terminate a string.
+          end: (?=, |,$| +[#{\[]| *$| *})
+          patterns:
+            - include: source.oniregexp
 
   file-types:
     patterns:
@@ -197,7 +267,7 @@ repository:
         - include: '#unmatched'
         - include: '#illegal'
 
-# in-block special keys
+  # in-block special keys
   name:
     name: meta.name.yaml-tmlanguage
     match: (?:, +|\{ *|^ {2,}|^ *- +)((["']?)(contentName|name)(\2))(:) +((["']?)[-\w\. ]*(\7))
@@ -432,7 +502,7 @@ repository:
       # (e.g. "- name: something\n  comment: dd"). Easiest workaroung.
       end: ^(?! *$|\1\2  ) #|(?<=.)(?=, |,$| +#| *(?<![^\\]\\)})
 
-# dict keys
+  # dict keys
   captures:
     name: meta.captures.yaml-tmlanguage
     match: (?:, +|\{ *|^ {2,}|^ *- +)((["']?)((?:(?:begin|end)C|c)aptures)(\2))(:)
@@ -454,7 +524,7 @@ repository:
       '4': {name: punctuation.definition.string.yaml-tmlanguage}
       '5': {name: keyword.control.definition.yaml-tmlanguage}
 
-# variable keys
+  # variable keys
   number-key:
     name: meta.number-key.yaml-tmlanguage
     match: (?:, +|\{ *|^ *)((["'])(\d+)(\2))(:)
